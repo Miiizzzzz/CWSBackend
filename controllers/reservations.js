@@ -4,40 +4,59 @@ const CoWorkingSpace = require('../models/CoWorkingSpace');
 //@desc     Get All reservations
 //@route    GET /api/v1/reservations
 //@access   Private
-exports.getReservations=async(req,res,next)=>{
+exports.getReservations = async (req, res, next) => {
     let query;
-    //general user can only see their reservations!
-    if(req.user.role !== 'admin'){
-        query = Reservation.find({user:req.user.id}).populate({
-            path:'coWorkingSpace',
-            select:'name address tel'
+    
+    // General user can only see their reservations!
+    if (req.user.role !== 'admin') {
+      query = Reservation.find({ user: req.user.id })
+        .populate({
+          path: 'coWorkingSpace',
+          select: 'name address tel',
+        })
+        .populate({
+          path: 'user',  // Populate the user field
+          select: 'name email', // Adjust the fields you need
         });
-    } else { //If you are an admin, you can see all!
-        if(req.params.coWorkingSpaceId){
-            console.log(req.params.coWorkingSpaceId);
-            query = Reservation.find({coWorkingSpace: req.params.coWorkingSpaceId}).populate({
-                path:'coWorkingSpace',
-                select:'name address tel'
-            });
-        } else
-        query = Reservation.find().populate({
-            path:'coWorkingSpace',
-            select:'name address tel'
-        });
+    } else {
+      // If you're an admin, you can see all reservations
+      if (req.params.coWorkingSpaceId) {
+        console.log(req.params.coWorkingSpaceId);
+        query = Reservation.find({ coWorkingSpace: req.params.coWorkingSpaceId })
+          .populate({
+            path: 'coWorkingSpace',
+            select: 'name address tel',
+          })
+          .populate({
+            path: 'user',  // Populate the user field for admin
+            select: 'name email',
+          });
+      } else {
+        query = Reservation.find()
+          .populate({
+            path: 'coWorkingSpace',
+            select: 'name address tel',
+          })
+          .populate({
+            path: 'user',  // Populate the user field for all reservations
+            select: 'name email',
+          });
+      }
     }
+  
     try {
-        const reservations = await query;
-
-        res.status(200).json({
-            success:true,
-            count:reservations.length,
-            data:reservations
-        });
-    } catch(error) {
-        console.log(error);
-        return res.status(500).json({success:false,message:"Cannot find Reservations"});
+      const reservations = await query;
+  
+      res.status(200).json({
+        success: true,
+        count: reservations.length,
+        data: reservations,
+      });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({ success: false, message: 'Cannot find Reservations' });
     }
-};
+  };
 
 //@desc     Get single reservation
 //@route    GET /api/v1/reservations/:id
